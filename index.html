@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Egyptian National ID Validator</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 0 20px;
+      }
+
+      .container {
+        background-color: #f5f5f5;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .input-section {
+        margin-bottom: 20px;
+      }
+
+      .input-group {
+        margin-bottom: 15px;
+      }
+
+      input[type="text"] {
+        padding: 10px;
+        font-size: 16px;
+        width: 250px;
+        border: 2px solid #ddd;
+        border-radius: 4px;
+        margin-right: 10px;
+      }
+
+      button {
+        padding: 10px 20px;
+        font-size: 16px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      button:hover {
+        background-color: #0056b3;
+      }
+
+      .info-section {
+        background-color: white;
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 4px;
+        border-left: 4px solid #007bff;
+      }
+
+      .error {
+        color: #dc3545;
+        margin-top: 5px;
+        font-size: 14px;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      h2 {
+        color: #007bff;
+        margin-top: 0;
+      }
+
+      .info-item {
+        margin: 10px 0;
+      }
+
+      .info-label {
+        font-weight: bold;
+        color: #555;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Egyptian National ID Validator</h1>
+
+      <div class="input-section">
+        <div class="input-group">
+          <input
+            type="text"
+            id="nationalId"
+            placeholder="Enter 14-digit National ID"
+            maxlength="14"
+            pattern="\d{14}"
+          />
+          <button onclick="validateNationalId()">Validate</button>
+        </div>
+        <div id="error-message" class="error hidden"></div>
+      </div>
+
+      <div id="results" class="hidden">
+        <div class="info-section">
+          <h2>Birth Date Information</h2>
+          <div id="birthInfo"></div>
+        </div>
+
+        <div class="info-section">
+          <h2>Governorate Information</h2>
+          <div id="governorateInfo"></div>
+        </div>
+
+        <div class="info-section">
+          <h2>Birth Order and Gender Information</h2>
+          <div id="orderGenderInfo"></div>
+        </div>
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+      function validateNationalId() {
+        const nationalId = document.getElementById("nationalId").value;
+        const errorElement = document.getElementById("error-message");
+        const resultsElement = document.getElementById("results");
+
+        // Reset previous results
+        errorElement.classList.add("hidden");
+        resultsElement.classList.add("hidden");
+
+        // Basic validation
+        if (!/^\d{14}$/.test(nationalId)) {
+          errorElement.textContent = "Please enter a valid 14-digit National ID";
+          errorElement.classList.remove("hidden");
+          return;
+        }
+
+        try {
+          // Call the main validation function
+          nationalIDinfogetter(nationalId);
+          resultsElement.classList.remove("hidden");
+        } catch (error) {
+          errorElement.textContent =
+            error.message || "An error occurred while validating the ID";
+          errorElement.classList.remove("hidden");
+        }
+      }
+
+      // Override console.log to write to the appropriate div
+      const originalConsoleLog = console.log;
+      console.log = function (message) {
+        originalConsoleLog.apply(console, arguments);
+
+        // Create an info item div
+        const infoItem = document.createElement("div");
+        infoItem.className = "info-item";
+
+        // Format the message
+        if (typeof message !== "string") {
+          // Fallback for non-string logs
+          infoItem.textContent = String(message);
+        } else if (message.includes("===")) {
+          // This is a section header, skip it
+          return;
+        } else if (message.includes(":")) {
+          // Split only at the first colon so values that contain colons
+          // (for example: "Governorate: Dakahlia (code: 12)") are kept intact.
+          const idx = message.indexOf(":");
+          const label = message.slice(0, idx).trim();
+          const value = message.slice(idx + 1).trim();
+          infoItem.innerHTML = `<span class="info-label">${label}:</span> ${value}`;
+        } else {
+          infoItem.textContent = message;
+        }
+
+        // Determine which section to append to
+        if (
+          message.toLowerCase().includes("birth") ||
+          message.includes("Year") ||
+          message.includes("Month") ||
+          message.includes("Day")
+        ) {
+          document.getElementById("birthInfo").appendChild(infoItem);
+        } else if (message.includes("Governorate")) {
+          document.getElementById("governorateInfo").appendChild(infoItem);
+        } else if (message.includes("Gender") || message.includes("Order")) {
+          document.getElementById("orderGenderInfo").appendChild(infoItem);
+        }
+      };
+
+      // Clear results when input changes
+      document.getElementById("nationalId").addEventListener("input", function () {
+        document.getElementById("error-message").classList.add("hidden");
+        document.getElementById("results").classList.add("hidden");
+        document.getElementById("birthInfo").innerHTML = "";
+        document.getElementById("governorateInfo").innerHTML = "";
+        document.getElementById("orderGenderInfo").innerHTML = "";
+      });
+    </script>
+  </body>
+</html>
